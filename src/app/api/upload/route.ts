@@ -1,8 +1,12 @@
 import { NextResponse } from "next/server";
-import { writeFile, mkdir, unlink } from "node:fs/promises";
 import path from "node:path";
 import { prisma } from "@/lib/prisma";
 import { checkIsLate, isPastDeadline } from "@/lib/calculations";
+import {
+  contentTypeForExtension,
+  removeStoredSubmission,
+  storeSubmissionFile,
+} from "@/lib/submission-storage";
 
 const ALLOWED_EXTENSIONS = new Set([".pdf", ".docx"]);
 
@@ -78,14 +82,17 @@ export async function POST(request: Request) {
       .toLowerCase()
       .replace(/[^a-z0-9-]/g, "-");
     const fileName = `${safeBase}${extension}`;
-    const uploadsDir = path.join(process.cwd(), "public", "uploads");
-    await mkdir(uploadsDir, { recursive: true });
-
     const buffer = Buffer.from(await file.arrayBuffer());
-    await writeFile(path.join(uploadsDir, fileName), buffer);
-
-    const fileUrl = `/uploads/${fileName}`;
+    const fileUrl = await storeSubmissionFile(
+      fileName,
+      buffer,
+      contentTypeForExtension(extension),
+    );
     const isLate = checkIsLate(serverNow, assessment.deadline);
+
+    if (existing && existing.fileUrl !== fileUrl) {
+      await removeStoredSubmission(existing.fileUrl);
+    }
 
     const submission = await prisma.submission.upsert({
       where: {
@@ -153,7 +160,10 @@ export async function DELETE(request: Request) {
 
     if (isPastDeadline(new Date(), assessment.deadline)) {
       return NextResponse.json(
-        { success: false, message: "Submission cannot be removed after the deadline" },
+        {
+          success: false,
+          message: "Submission cannot be removed after the deadline",
+        },
         { status: 409 },
       );
     }
@@ -175,16 +185,7 @@ export async function DELETE(request: Request) {
       where: { id: existing.id },
     });
 
-    const diskPath = path.join(
-      process.cwd(),
-      "public",
-      existing.fileUrl.replace(/^\//, ""),
-    );
-    try {
-      await unlink(diskPath);
-    } catch {
-      // File may already be gone; the record is what matters.
-    }
+    await removeStoredSubmission(existing.fileUrl);
 
     return NextResponse.json({
       success: true,
