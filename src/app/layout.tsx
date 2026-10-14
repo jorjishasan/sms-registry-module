@@ -1,20 +1,22 @@
 import type { Metadata } from "next";
-import { Outfit, IBM_Plex_Mono } from "next/font/google";
+import { IBM_Plex_Mono, IBM_Plex_Sans } from "next/font/google";
 import { AppNavbar } from "@/components/app-navbar";
 import { Toaster } from "@/components/ui/sonner";
 import { getStudentPickerOptions } from "@/lib/queries";
 import { getRoleState } from "@/lib/role";
 import "./globals.css";
 
-const outfit = Outfit({
+const plexSans = IBM_Plex_Sans({
   variable: "--font-sans",
   subsets: ["latin"],
+  weight: ["400", "500", "600"],
   display: "swap",
 });
 
-const outfitHeading = Outfit({
+const plexHeading = IBM_Plex_Sans({
   variable: "--font-heading",
   subsets: ["latin"],
+  weight: ["500", "600"],
   display: "swap",
 });
 
@@ -47,9 +49,9 @@ export default async function RootLayout({
   return (
     <html
       lang="en"
-      className={`${outfit.variable} ${outfitHeading.variable} ${plexMono.variable} h-full`}
+      className={`${plexSans.variable} ${plexHeading.variable} ${plexMono.variable} h-full`}
     >
-      <body className="flex min-h-full flex-col">
+      <body className="flex min-h-full flex-col font-sans antialiased">
         <AppNavbar
           role={role}
           viewingStudentId={activeStudentId}

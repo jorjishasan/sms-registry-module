@@ -221,13 +221,12 @@ export function AppNavbar({
             <div
               role="group"
               aria-label="View mode"
-              className="relative grid h-9 w-[168px] grid-cols-2 rounded-full bg-muted/70 p-0.5 ring-1 ring-border/60"
+              className="role-toggle relative grid h-9 w-[168px] grid-cols-2 rounded-full bg-muted/70 p-0.5 ring-1 ring-border/60"
             >
               <span
                 aria-hidden
                 className={cn(
-                  "absolute top-0.5 bottom-0.5 left-0.5 w-[calc(50%-2px)] rounded-full bg-card shadow-sm ring-1 ring-border/50",
-                  "transition-transform duration-300 ease-spring",
+                  "role-toggle-thumb absolute top-0.5 bottom-0.5 left-0.5 w-[calc(50%-2px)] rounded-full bg-card shadow-sm ring-1 ring-border/50",
                   role === "student" ? "translate-x-full" : "translate-x-0",
                 )}
               />
@@ -241,11 +240,10 @@ export function AppNavbar({
                   })
                 }
                 className={cn(
-                  "relative z-10 rounded-full text-[length:var(--step-0)] font-medium",
-                  "transition-colors duration-200",
+                  "role-toggle-option relative z-10 rounded-full text-[length:var(--step-0)] font-medium",
                   role === "staff"
                     ? "text-foreground"
-                    : "text-muted-foreground hover:text-foreground",
+                    : "text-muted-foreground",
                 )}
               >
                 Staff
@@ -260,11 +258,10 @@ export function AppNavbar({
                   })
                 }
                 className={cn(
-                  "relative z-10 rounded-full text-[length:var(--step-0)] font-medium",
-                  "transition-colors duration-200",
+                  "role-toggle-option relative z-10 rounded-full text-[length:var(--step-0)] font-medium",
                   role === "student"
                     ? "text-foreground"
-                    : "text-muted-foreground hover:text-foreground",
+                    : "text-muted-foreground",
                 )}
               >
                 Student
