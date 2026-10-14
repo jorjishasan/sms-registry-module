@@ -41,8 +41,18 @@ export function checkIsLate(submittedAt: Date, deadline: Date): boolean {
   return isPastDeadline(submittedAt, deadline);
 }
 
-/** Uploads and removals stop once the deadline has passed. */
-export function canModifySubmission(now: Date, deadline: Date): boolean {
+/** A file can be replaced only before the deadline. The first upload is still accepted after it. */
+export function canReplaceSubmission(
+  now: Date,
+  deadline: Date,
+  hasSubmission: boolean,
+): boolean {
+  if (!isPastDeadline(now, deadline)) return true;
+  return !hasSubmission;
+}
+
+/** A submitted file can be removed only before the deadline. */
+export function canRemoveSubmission(now: Date, deadline: Date): boolean {
   return !isPastDeadline(now, deadline);
 }
 

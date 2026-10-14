@@ -6,6 +6,12 @@ import { useState, useTransition } from "react";
 import { CheckIcon, ChevronDownIcon } from "lucide-react";
 import { setRole, setViewingStudent } from "@/actions/role";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
   Popover,
   PopoverContent,
   PopoverTrigger,
@@ -51,12 +57,44 @@ export function AppNavbar({
   const activeStudent =
     students.find((student) => student.id === viewingStudentId) ?? students[0];
 
+  const activeLink =
+    links.find((link) =>
+      link.href === "/" ? pathname === "/" : pathname.startsWith(link.href),
+    ) ?? links[0];
+
   return (
     <header className="sticky top-0 z-40 border-b border-border/80 bg-background/80 backdrop-blur-xl supports-backdrop-filter:bg-background/70">
-      <div className="mx-auto flex w-full max-w-7xl flex-col gap-2 px-4 py-2.5 md:flex-row md:items-center md:justify-between md:gap-3 md:px-6">
+      <div className="mx-auto flex w-full max-w-7xl items-center justify-between gap-3 px-4 py-2.5 md:px-6">
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            className={cn(
+              "inline-flex h-9 items-center gap-1.5 rounded-full bg-foreground px-3.5 text-[length:var(--step-0)] font-medium text-background lg:hidden",
+              "outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
+            )}
+          >
+            {activeLink.label}
+            <ChevronDownIcon className="size-3.5 opacity-80" />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="w-48">
+            {links.map((link) => {
+              const active = link.href === activeLink.href;
+              return (
+                <DropdownMenuItem key={link.href} asChild>
+                  <Link
+                    href={link.href}
+                    className={cn(active && "font-medium")}
+                  >
+                    {link.label}
+                  </Link>
+                </DropdownMenuItem>
+              );
+            })}
+          </DropdownMenuContent>
+        </DropdownMenu>
+
         <nav
           aria-label="Primary"
-          className="flex w-full min-w-0 items-center gap-1 overflow-x-auto md:flex-wrap md:overflow-visible"
+          className="hidden min-w-0 items-center gap-1 lg:flex"
         >
           {links.map((link) => {
             const active =
@@ -85,7 +123,7 @@ export function AppNavbar({
           })}
         </nav>
 
-        <div className="flex w-full shrink-0 items-center justify-end gap-2 md:w-auto">
+        <div className="flex shrink-0 items-center gap-2">
             {role === "student" ? (
             <div className="relative h-9 w-[168px]">
               <Popover open={pickerOpen} onOpenChange={setPickerOpen}>

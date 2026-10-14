@@ -59,12 +59,12 @@ export function ExtendDeadlineDialog({
       <DialogTrigger asChild>
         <Button size="sm" variant="outline" className="gap-1.5">
           <CalendarClockIcon />
-          Extend
+          Edit
         </Button>
       </DialogTrigger>
       <DialogContent className="dialog-surface sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Extend deadline</DialogTitle>
+          <DialogTitle>Edit deadline</DialogTitle>
           <DialogDescription className="line-clamp-2">{title}</DialogDescription>
         </DialogHeader>
         <FieldGroup>

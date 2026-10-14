@@ -132,9 +132,12 @@ export default async function AssessmentsPage() {
                         </FilePreviewTrigger>
                       </div>
                     ) : (
-                      <p className="text-[length:var(--step--1)] text-muted-foreground">
-                        Not submitted
-                      </p>
+                      <SubmissionUpload
+                        assessmentId={assessment.id}
+                        studentId={studentId}
+                        existing={null}
+                        late
+                      />
                     )}
                   </li>
                 );

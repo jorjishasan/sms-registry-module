@@ -16,10 +16,12 @@ export function SubmissionUpload({
   assessmentId,
   studentId,
   existing,
+  late = false,
 }: {
   assessmentId: string;
   studentId: string;
   existing: { fileName: string; fileUrl: string; isLate: boolean } | null;
+  late?: boolean;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
@@ -106,7 +108,7 @@ export function SubmissionUpload({
             >
               {documentFileLabel(existing.fileName)}
             </FilePreviewTrigger>
-            {confirmRemove ? (
+            {confirmRemove && !late ? (
               <div className="ml-1.5 flex items-center gap-1">
                 <Button
                   type="button"
@@ -129,7 +131,7 @@ export function SubmissionUpload({
                   Remove
                 </Button>
               </div>
-            ) : (
+            ) : !late ? (
               <Button
                 type="button"
                 size="icon-sm"
@@ -146,7 +148,7 @@ export function SubmissionUpload({
               >
                 <Trash2Icon className="size-3.5" />
               </Button>
-            )}
+            ) : null}
           </div>
         </div>
       ) : null}
@@ -170,14 +172,18 @@ export function SubmissionUpload({
           }}
         >
           <p className="text-[length:var(--step--1)] text-muted-foreground">
-            {existing ? "Replace with PDF or DOCX" : "PDF or DOCX"}
+            {late
+              ? "Late submission · PDF or DOCX"
+              : existing
+                ? "Replace with PDF or DOCX"
+                : "PDF or DOCX"}
           </p>
           <PendingButton
             type="button"
             variant="default"
             size="sm"
             pending={uploading}
-            idle={existing ? "Replace" : "Choose file"}
+            idle={late ? "Submit" : existing ? "Replace" : "Choose file"}
             pendingLabel="Uploading"
             onClick={() => inputRef.current?.click()}
           />

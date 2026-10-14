@@ -58,12 +58,17 @@ export async function POST(request: Request) {
     }
 
     const serverNow = new Date();
+    const existing = await prisma.submission.findUnique({
+      where: {
+        assessmentId_studentId: { assessmentId, studentId },
+      },
+    });
 
-    if (isPastDeadline(serverNow, assessment.deadline)) {
+    if (existing && isPastDeadline(serverNow, assessment.deadline)) {
       return NextResponse.json(
         {
           success: false,
-          message: "This assessment is closed",
+          message: "Resubmission blocked after the deadline",
         },
         { status: 409 },
       );
