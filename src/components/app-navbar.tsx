@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { CheckIcon, ChevronDownIcon } from "lucide-react";
 import { setRole, setViewingStudent } from "@/actions/role";
 import {
@@ -40,6 +40,111 @@ function initials(name: string) {
     .slice(0, 2)
     .map((part) => part[0]?.toUpperCase() ?? "")
     .join("");
+}
+
+function RoleSwitch({
+  role,
+  pending,
+  onSelect,
+}: {
+  role: AppRole;
+  pending: boolean;
+  onSelect: (next: AppRole) => void;
+}) {
+  const thumbRef = useRef<HTMLSpanElement>(null);
+  const groupRef = useRef<HTMLDivElement>(null);
+  const pos = useRef(role === "student" ? 1 : 0);
+  const vel = useRef(0);
+  const target = useRef(pos.current);
+  const hover = useRef<AppRole | null>(null);
+
+  useEffect(() => {
+    target.current = (hover.current ?? role) === "student" ? 1 : 0;
+  }, [role]);
+
+  useEffect(() => {
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    let frame = 0;
+    let last = performance.now();
+
+    const tick = (now: number) => {
+      const dt = Math.min(0.032, (now - last) / 1000);
+      last = now;
+      const dest = target.current;
+
+      if (reduced) {
+        pos.current = dest;
+        vel.current = 0;
+      } else {
+        const stiffness = 340;
+        const damping = 26;
+        vel.current += ((dest - pos.current) * stiffness - vel.current * damping) * dt;
+        pos.current += vel.current * dt;
+        if (Math.abs(dest - pos.current) < 0.0008 && Math.abs(vel.current) < 0.008) {
+          pos.current = dest;
+          vel.current = 0;
+        }
+      }
+
+      const x = Math.min(1, Math.max(0, pos.current));
+      if (thumbRef.current) {
+        thumbRef.current.style.transform = `translate3d(${x * 100}%, 0, 0)`;
+      }
+      groupRef.current?.style.setProperty("--role-x", x.toFixed(4));
+      frame = requestAnimationFrame(tick);
+    };
+
+    frame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frame);
+  }, []);
+
+  function pointAt(next: AppRole | null) {
+    hover.current = next;
+    target.current = (next ?? role) === "student" ? 1 : 0;
+  }
+
+  return (
+    <div
+      ref={groupRef}
+      role="group"
+      aria-label="View mode"
+      className="role-toggle relative grid h-9 w-[168px] grid-cols-2 rounded-full bg-muted/70 p-0.5 ring-1 ring-border/60"
+      style={{ ["--role-x" as string]: role === "student" ? 1 : 0 }}
+      onMouseLeave={() => pointAt(null)}
+    >
+      <span
+        ref={thumbRef}
+        aria-hidden
+        className="role-toggle-thumb absolute top-0.5 bottom-0.5 left-0.5 w-[calc(50%-2px)] rounded-full bg-card shadow-sm ring-1 ring-border/50"
+      />
+      <button
+        type="button"
+        disabled={pending}
+        aria-pressed={role === "staff"}
+        data-side="staff"
+        onMouseEnter={() => pointAt("staff")}
+        onFocus={() => pointAt("staff")}
+        onBlur={() => pointAt(null)}
+        onClick={() => onSelect("staff")}
+        className="role-toggle-option relative z-10 rounded-full text-[length:var(--step-0)] font-medium"
+      >
+        Staff
+      </button>
+      <button
+        type="button"
+        disabled={pending}
+        aria-pressed={role === "student"}
+        data-side="student"
+        onMouseEnter={() => pointAt("student")}
+        onFocus={() => pointAt("student")}
+        onBlur={() => pointAt(null)}
+        onClick={() => onSelect("student")}
+        className="role-toggle-option relative z-10 rounded-full text-[length:var(--step-0)] font-medium"
+      >
+        Student
+      </button>
+    </div>
+  );
 }
 
 export function AppNavbar({
@@ -218,55 +323,15 @@ export function AppNavbar({
             </div>
             ) : null}
 
-            <div
-              role="group"
-              aria-label="View mode"
-              className="role-toggle relative grid h-9 w-[168px] grid-cols-2 rounded-full bg-muted/70 p-0.5 ring-1 ring-border/60"
-            >
-              <span
-                aria-hidden
-                className={cn(
-                  "role-toggle-thumb absolute top-0.5 bottom-0.5 left-0.5 w-[calc(50%-2px)] rounded-full bg-card shadow-sm ring-1 ring-border/50",
-                  role === "student" ? "translate-x-full" : "translate-x-0",
-                )}
-              />
-              <button
-                type="button"
-                disabled={pending}
-                aria-pressed={role === "staff"}
-                onClick={() =>
-                  startTransition(async () => {
-                    await setRole("staff");
-                  })
-                }
-                className={cn(
-                  "role-toggle-option relative z-10 rounded-full text-[length:var(--step-0)] font-medium",
-                  role === "staff"
-                    ? "text-foreground"
-                    : "text-muted-foreground",
-                )}
-              >
-                Staff
-              </button>
-              <button
-                type="button"
-                disabled={pending}
-                aria-pressed={role === "student"}
-                onClick={() =>
-                  startTransition(async () => {
-                    await setRole("student");
-                  })
-                }
-                className={cn(
-                  "role-toggle-option relative z-10 rounded-full text-[length:var(--step-0)] font-medium",
-                  role === "student"
-                    ? "text-foreground"
-                    : "text-muted-foreground",
-                )}
-              >
-                Student
-              </button>
-            </div>
+            <RoleSwitch
+              role={role}
+              pending={pending}
+              onSelect={(next) =>
+                startTransition(async () => {
+                  await setRole(next);
+                })
+              }
+            />
         </div>
       </div>
     </header>

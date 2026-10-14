@@ -1,5 +1,5 @@
 import { CreateAssessmentDialog } from "@/components/assessments/create-assessment-dialog";
-import { ExtendDeadlineDialog } from "@/components/assessments/extend-deadline-dialog";
+import { StaffSubmissionGroups } from "@/components/assessments/staff-submission-groups";
 import { SubmissionUpload } from "@/components/assessments/submission-upload";
 import { FilePreviewTrigger } from "@/components/file-preview-dialog";
 import { PageHeader } from "@/components/page-header";
@@ -167,80 +167,25 @@ export default async function AssessmentsPage() {
         actions={<CreateAssessmentDialog />}
       />
 
-      <div className="flex flex-col gap-4">
-        {assessments.map((assessment) => {
-          const closed = isPastDeadline(now, assessment.deadline);
-          return (
-            <section
-              key={assessment.id}
-              className="overflow-hidden rounded-xl bg-card ring-1 ring-border/70"
-            >
-              <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border/60 px-4 py-3">
-                <div className="min-w-0">
-                  <h2 className="truncate font-medium">{assessment.title}</h2>
-                  <p className="font-mono text-[length:var(--step--1)] tabular-nums text-muted-foreground">
-                    {assessment.moduleCode}
-                    <span className="mx-1.5 text-border">·</span>
-                    {formatDateTime(assessment.deadline)}
-                    {closed ? (
-                      <span className="ml-1.5 text-muted-foreground/80">
-                        · Closed
-                      </span>
-                    ) : null}
-                  </p>
-                </div>
-                <ExtendDeadlineDialog
-                  assessmentId={assessment.id}
-                  title={assessment.title}
-                  currentDeadline={assessment.deadline}
-                />
-              </header>
-              {assessment.submissions.length === 0 ? (
-                <p className="px-4 py-3 text-sm text-muted-foreground">
-                  No submissions
-                </p>
-              ) : (
-                <ul>
-                  {assessment.submissions.map((submission) => (
-                    <li
-                      key={submission.id}
-                      className="grid grid-cols-1 items-center gap-2 border-b border-border/50 px-4 py-3 last:border-b-0 lg:grid-cols-[minmax(0,1.5fr)_10.5rem_minmax(8rem,1fr)_5.25rem] lg:gap-x-6"
-                    >
-                      <div className="min-w-0">
-                        <p className="truncate font-medium leading-tight">
-                          {submission.student.fullName}
-                        </p>
-                        <p className="mt-0.5 font-mono text-[length:var(--step--1)] tabular-nums text-muted-foreground">
-                          {submission.student.studentId}
-                        </p>
-                      </div>
-                      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 lg:contents">
-                      <p className="font-mono text-[length:var(--step--1)] tabular-nums text-muted-foreground lg:text-right">
-                        {formatDateTime(submission.submittedAt)}
-                      </p>
-                      <FilePreviewTrigger
-                        href={submission.fileUrl}
-                        fileName={submission.fileName}
-                        className="min-w-0 text-[length:var(--step--1)] lg:justify-self-end"
-                      >
-                        {documentFileLabel(submission.fileName)}
-                      </FilePreviewTrigger>
-                      <div className="lg:justify-self-end">
-                        <StatusBadge
-                          tone={submission.isLate ? "danger" : "success"}
-                        >
-                          {submission.isLate ? "Late" : "On time"}
-                        </StatusBadge>
-                      </div>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </section>
-          );
-        })}
-      </div>
+      <StaffSubmissionGroups
+        assessments={assessments.map((assessment) => ({
+          id: assessment.id,
+          title: assessment.title,
+          moduleCode: assessment.moduleCode,
+          deadlineLabel: formatDateTime(assessment.deadline),
+          closed: isPastDeadline(now, assessment.deadline),
+          deadlineIso: assessment.deadline.toISOString(),
+          submissions: assessment.submissions.map((submission) => ({
+            id: submission.id,
+            fileName: submission.fileName,
+            fileUrl: submission.fileUrl,
+            isLate: submission.isLate,
+            submittedAt: submission.submittedAt.toISOString(),
+            studentName: submission.student.fullName,
+            studentCode: submission.student.studentId,
+          })),
+        }))}
+      />
     </div>
   );
 }
