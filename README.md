@@ -2,6 +2,10 @@
 
 A monolithic Next.js 14+ (App Router) Registry Administration web application built with Prisma ORM and PostgreSQL for the PEN Global technical assessment.
 
+**Live:** [pen-sms-site.vercel.app](https://pen-sms-site.vercel.app)
+
+The site runs on Vercel. Data is Neon Postgres through Prisma. Assessment files on the live site go to Vercel Blob. A local run still stores those files in `public/uploads`.
+
 ---
 
 ## 1. System Architecture & Flow
@@ -35,7 +39,7 @@ flowchart TB
   end
 
   PG[(PostgreSQL Database Real DB State)]
-  FS["Local File Storage /public/uploads"]
+  FS["Local /public/uploads or Vercel Blob on live"]
 
   presentation --> application
   application --> domain
@@ -140,7 +144,7 @@ pnpm test
 
 ## 7. AI Usage & Governance
 
-AI was used to scaffold Prisma models, Zod schemas, seed records, and UI structure. `AI_DIRECTIVES.md` kept the work on one Next.js app, a real database, and the deadline, balance, and embargo rules. Transactions, balances, deadline checks, and withheld grades were reviewed by hand.
+AI was used to scaffold Prisma models, Zod schemas, seed records, and UI structure. [AI_DIRECTIVES.md](AI_DIRECTIVES.md) kept the work on one Next.js app, a real database, and the deadline, balance, and embargo rules. Transactions, balances, deadline checks, and withheld grades were reviewed by hand.
 
 ---
 
@@ -172,6 +176,7 @@ AI was used to scaffold Prisma models, Zod schemas, seed records, and UI structu
    ```env
    DATABASE_URL="postgresql://postgres:password@localhost:5432/sms_registry?schema=public"
    ```
+   Leave `BLOB_READ_WRITE_TOKEN` unset locally so uploads stay in `public/uploads`. On Vercel, add that token from Storage → Blob so live uploads go to Blob.
    Without a local Postgres install, start the embedded helper in a separate terminal (writes `.env` automatically):
    ```bash
    pnpm db:pg
