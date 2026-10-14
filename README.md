@@ -81,34 +81,28 @@ flowchart TB
 
 ---
 
-## 2. Core Workflows & Edge-Case Handling
+## 2. Covering Necessary Edge Cases/Feat not including in the PDF
 
-The application implements deliberate business rules and edge-case protections across the four core Registry workflows:
-
-- **1. Student Enrolment:**
-  - Auto-generates sequential Student IDs in the format `SMS-YYYY-XXXX` (e.g., `SMS-2026-0001`) via atomic database counts to eliminate race conditions.
-  - Records student details: full name, unique email, date of birth, programme, academic year, and enrolment status.
-  - Enforces valid lifecycle statuses: `Enrolled`, `Deferred`, `Withdrawn`, and `Completed`.
-  - Provides multi-criteria search and filtering by student name, ID, programme, or status.
-- **2. Fees & Payments:**
-  - Automatically assigns tuition fees based on the student's enrolled programme.
-  - Records payment transactions capturing amount, payment date, and unique reference number.
-  - Computes outstanding balance in real time ($$\text{Balance} = \text{Programme Fee} - \sum \text{Payments}$$) rather than relying on mutable stored totals.
-  - Surfaces visual overdue badges across the Registry dashboard and fee ledger whenever a student has an outstanding balance.
-- **3. Assessment Submission:**
-  - Allows staff to create assessments specifying title, module code, and submission deadline.
-  - Accepts file uploads restricted to `.pdf` and `.docx` formats.
-  - Enforces one active submission per student per assessment while permitting re-submissions prior to the deadline.
-  - Evaluates deadlines against server time; late submissions are accepted rather than blocked, but are visually flagged as **Late**.
-- **4. Marksheet & Results:**
-  - Enables staff to record numeric grades (0–100) per student per assessment.
-  - Product decision: automatically applies UK academic classifications — **Pass** (≥40), **Merit** (≥60), **Distinction** (≥70), and **Fail** (<40) — to make marksheet review faster for Registry staff.
-  - Provides a per-student **Publish / Withhold** toggle.
-  - Strips unpublished scores and tiers at the query layer so students can view their marksheet only once published (never CSS-only hiding).
+1. **Students can delete a submitted file before the deadline.** *{A student may want to refine the work and upload it again. Until then, staff cannot view the earlier file.}*
+2. **Staff can edit or extend a deadline.** *{Staff keep control of the submission date when a deadline needs to change.}*
+3. **PDF and Word files open in the app.** *{Students and staff can read a submission without downloading it first.}*
+4. **Payment references can be generated.** *{The next free `PAY-YYYY-XXXX` is filled in, so the reference stays unique without being typed by hand.}*
 
 ---
 
-## 3. Role Architecture (Staff vs. Student)
+## 3. Core Workflows
+
+**Enrolment.** A student record stores name, email, date of birth, programme, academic year, and status (`Enrolled`, `Deferred`, `Withdrawn`, `Completed`). The ID is `SMS-YYYY-XXXX`. Staff can search by name, ID, programme, or status.
+
+**Fees.** The fee comes from the programme. Payments store amount, date, and a unique reference. Balance is `fee − payments`, and any remainder is overdue on the dashboard and the ledger.
+
+**Assessments.** Staff set a title, module, and deadline. Students upload one PDF or DOCX, and may replace it before the deadline. A first upload after the deadline is still accepted and marked Late.
+
+**Marksheet.** Staff enter 0–100. The tier is Pass (≥40), Merit (≥60), Distinction (≥70), or Fail. Each result can be published or withheld. Unpublished scores never reach the student view.
+
+---
+
+## 4. Role Architecture (Staff vs. Student)
 
 - **Role Toggle:** A synchronous switcher in the top navigation bar allows toggling between **Staff View** and **Student View** without third-party auth complexity.
 - **Student Persona Selector:** In Student View, a dropdown lets evaluators inspect the portal from the perspective of any seeded student to verify individual payment and embargo states.
@@ -117,7 +111,7 @@ The application implements deliberate business rules and edge-case protections a
 
 ---
 
-## 4. Tech Stack & Constraints Compliance
+## 5. Tech Stack & Constraints Compliance
 
 - **Framework:** Next.js 14+ (App Router, Server Actions, Route Handlers).
 - **Database & ORM:** PostgreSQL running with Prisma ORM (`prisma/schema.prisma` committed).
@@ -127,7 +121,7 @@ The application implements deliberate business rules and edge-case protections a
 
 ---
 
-## 5. Automated Testing (Vitest)
+## 6. Automated Testing (Vitest)
 
 Domain rules are isolated as pure functions in `src/lib/calculations.ts` and covered by automated unit tests:
 
@@ -135,25 +129,22 @@ Domain rules are isolated as pure functions in `src/lib/calculations.ts` and cov
 pnpm test
 ```
 
-- **Fee Math:** Validates dynamic balance deductions and overdue boolean flags across full, partial, and zero-payment accounts.
-- **Classification Tiers:** Verifies exact boundary values (39 Fail vs 40 Pass; 59 Pass vs 60 Merit; 69 Merit vs 70 Distinction).
-- **Deadline Verification:** Validates server timestamp comparisons for on-time and late submissions.
-- **ID Formatting:** Verifies regex structure for `SMS-YYYY-XXXX` identifiers.
+- **Fee math:** full, partial, zero, and overpayment balances, including the overdue flag.
+- **Tiers:** boundaries at 39, 40, 59, 60, 69, 70, and 100, plus rejected scores.
+- **Deadlines:** on time at or before the deadline; late after it. A first upload is still allowed after the deadline; replace and remove are not.
+- **IDs:** `SMS-YYYY-XXXX` and `PAY-YYYY-XXXX`, including the lowest free number.
+- **Embargo:** a withheld grade returns no score or tier; a published grade does.
+- **File labels:** generated upload names display as the document name.
 
 ---
 
-## 6. AI Usage & Governance
+## 7. AI Usage & Governance
 
-In alignment with the assessment guidelines, AI tools were utilized to accelerate delivery while maintaining architectural control:
-
-- **Scaffolding:** Rapid generation of initial Prisma relations, Zod validation schemas, and UI table structures.
-- **Seed Synthesis:** Production of realistic synthetic records for cohorts, fee structures, and submission timelines.
-- **Agent Directives (`AI_DIRECTIVES.md`):** A dedicated directives file was maintained in the project root to restrict the AI from proposing separate backends, enforce real database persistence, and guarantee edge-case rules.
-- **Human Ownership:** All database transactions, real-time balance aggregations, server deadline checks, and grade embargo query protections were audited and validated manually.
+AI was used to scaffold Prisma models, Zod schemas, seed records, and UI structure. `AI_DIRECTIVES.md` kept the work on one Next.js app, a real database, and the deadline, balance, and embargo rules. Transactions, balances, deadline checks, and withheld grades were reviewed by hand.
 
 ---
 
-## 7. Local Setup & Installation
+## 8. Local Setup & Installation
 
 ### Prerequisites
 
@@ -185,12 +176,12 @@ In alignment with the assessment guidelines, AI tools were utilized to accelerat
    ```bash
    pnpm db:pg
    ```
-4. **Initialize Database & Seed Records:**
-   Apply migrations and load demo data:
+4. **Initialize the database and load demo data:**
    ```bash
    pnpm exec prisma migrate dev
    pnpm db:seed
    ```
+   `pnpm db:seed` replaces the demo rows. `pnpm db:reset` rebuilds the schema and seeds again.
 5. **Start the Development Server:**
    ```bash
    pnpm dev
@@ -203,13 +194,13 @@ In alignment with the assessment guidelines, AI tools were utilized to accelerat
 
 ---
 
-## 8. Seed Data Overview
+## 9. Seed Data Overview
 
-Running `npx prisma db seed` loads a comprehensive demo dataset:
+Running `pnpm db:seed` loads:
 
-- **2 Academic Programmes:** Computer Science BSc (£9,250 base fee) and Data Science MSc (£12,000 base fee).
-- **5 Student Profiles:** Formatted IDs (`SMS-2026-0001` to `SMS-2026-0005`) covering `Enrolled`, `Deferred`, `Withdrawn`, and `Completed` statuses.
-- **Fee Ledgers:** Seeded cases for fully paid (£0 balance), partial payments with active overdue badges, and unbilled accounts.
-- **Assessments & Submissions:** Open and closed deadlines with attached sample `.pdf` / `.docx` files, including late and on-time submissions.
-- **Grading States:** Sample grades spanning Pass, Merit, and Distinction tiers, with both published and withheld statuses to demonstrate result embargoes.
+- **2 programmes:** Computer Science BSc (£9,250) and Data Science MSc (£12,000).
+- **5 students:** `SMS-2026-0001`–`0005`, covering Enrolled, Deferred, Withdrawn, and Completed.
+- **Fees:** one settled account, one partial payment, and one with nothing paid.
+- **Assessments:** one open deadline and three closed ones, with on-time and late PDF/DOCX submissions.
+- **Grades:** Pass, Merit, Distinction, and Fail, both published and withheld.
 

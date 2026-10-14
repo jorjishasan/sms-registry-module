@@ -172,11 +172,10 @@ export function FilePreviewTrigger({
             marginInline: "auto",
             width:
               kind === "pdf"
-                ? "min(840px, calc(100vw - 1rem))"
-                : "min(680px, calc(100vw - 1rem))",
+                ? "min(640px, calc(100vw - 2rem))"
+                : "min(520px, calc(100vw - 2rem))",
             maxWidth: "none",
-            height: "calc(100dvh - 1.5rem)",
-            maxHeight: kind === "pdf" ? "920px" : "780px",
+            height: kind === "pdf" ? "min(72dvh, 680px)" : "min(64dvh, 560px)",
           }}
         >
           <DialogHeader className="border-b border-border/60 px-4 py-3">

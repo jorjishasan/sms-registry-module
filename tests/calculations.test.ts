@@ -3,6 +3,8 @@ import {
   allocatePaymentReference,
   allocateStudentId,
   calculateFeeSummary,
+  canRemoveSubmission,
+  canReplaceSubmission,
   checkIsLate,
   generateNextStudentId,
   getGradeClassification,
@@ -79,6 +81,24 @@ describe("isPastDeadline / checkIsLate", () => {
     expect(checkIsLate(new Date("2026-06-01T17:00:01.000Z"), deadline)).toBe(
       true,
     );
+  });
+});
+
+describe("submission windows", () => {
+  const deadline = new Date("2026-06-01T17:00:00.000Z");
+  const before = new Date("2026-06-01T16:00:00.000Z");
+  const after = new Date("2026-06-01T18:00:00.000Z");
+
+  it("allows replace and remove before the deadline", () => {
+    expect(canReplaceSubmission(before, deadline, true)).toBe(true);
+    expect(canReplaceSubmission(before, deadline, false)).toBe(true);
+    expect(canRemoveSubmission(before, deadline)).toBe(true);
+  });
+
+  it("accepts a first upload after the deadline and blocks replace or remove", () => {
+    expect(canReplaceSubmission(after, deadline, false)).toBe(true);
+    expect(canReplaceSubmission(after, deadline, true)).toBe(false);
+    expect(canRemoveSubmission(after, deadline)).toBe(false);
   });
 });
 

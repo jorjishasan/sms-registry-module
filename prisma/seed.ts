@@ -248,7 +248,7 @@ async function main() {
   console.log("- 2 programmes");
   console.log("- 5 students (SMS-2026-0001 … 0005)");
   console.log("- fee ledgers: full / partial overdue / zero payments");
-  console.log("- 2 assessments (open + closed)");
+  console.log("- 4 assessments (1 open, 3 closed)");
   console.log("- on-time and late submissions");
   console.log("- published and withheld grades across Distinction/Merit/Pass/Fail");
 }
